@@ -30,7 +30,7 @@ app.use('/uploads', express.static('uploads'));
 app.use(express.json())
 app.use(cookieParser());
 const sharp = require('sharp');
-app.listen(5100, () => {
+app.listen(8080, () => {
   console.log("listening")
 })
 
