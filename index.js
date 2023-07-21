@@ -7,6 +7,7 @@ const kmeans = require('node-kmeans', 'ml-kmeans');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const cookieParser = require('cookie-parser');
+const cookie = require('cookie');
 require('dotenv').config()
 console.log(process.env)
 console.log(process.env.DB_PASSWORD)
@@ -15,12 +16,14 @@ const db = mysql.createConnection({
   user: process.env.DB_USERNAME,
   password: process.env.DB_PASSWORD,
   database: "skripsihayatistore",
+  ssl: {}
 });
 const idmining = mysql.createConnection({
-  host: "localhost",
-  user: process.env.DB_USERNAME,
-  password: process.env.DB_PASSWORD,
+  host: "aws.connect.psdb.cloud",
+  user: "03ncavdktsvy5juozpqi",
+  password: "pscale_pw_pX43mt3xiHazkdDyi6ezOvc42nXaOqgk1BWEC4Wg4hE",
   database: "skripsihayatistore",
+  ssl: {}
 });
 
 const express = require("express"); //import express
@@ -34,8 +37,7 @@ app.listen(8080, () => {
   console.log("listening")
 })
 
-app.use(cors({ credentials: true, origin: 'http://localhost:3300' }));
-// make cors double origin
+app.use(cors({ credentials: true, origin: 'https://hayatistore.pages.dev' }));
 
 function euclideanDistance(point1, point2) {
   let sumSquaredDiffs = 0;
@@ -62,7 +64,7 @@ app.get('/clusters_new', (req, res) => {
     } else {
       const data = results.map(row => [row.JAN, row.FEB, row.MAR, row.APR, row.MEI, row.JUN, row.JUL, row.AGUST, row.SEPT, row.OKT, row.NOV, row.DES]);
       const numData = data.length;
-      const k = numData;
+      const k = 2
       const maxIterations = 2;
       kmeans.clusterize(data, { k, maxIterations }, (err, clusters) => {
         if (err) {
@@ -306,6 +308,98 @@ WHERE customercartlist.idcust = ?;
       res.status(500).send('Internal Server Error');
     } else {
       res.send(results);
+    }
+  });
+});
+app.get('/adddiscount/:id', (req, res) => {
+  const id_produk = req.params.id;
+  const u = "INSERT INTO `produkdiskon` values (?,'0')";
+  try {
+    db.query(u, [id_produk], (err, data) => {
+      if (err) {
+        console.log(err);
+        return res.json({ error: err.sqlMessage });
+      } else {
+        console.log(data);
+      }
+    });
+  } catch (err) {
+    console.log(err);
+    return res.json({ error: err.message });
+  }
+});
+app.post('/update-discount', (req, res) => {
+  const { id_produk, totaldiscount } = req.body;
+  const query = 'UPDATE produkdiskon SET totaldiscount=? WHERE id_produk=?';
+  const values = [totaldiscount, id_produk];
+  db.query(query, values, (err, result) => {
+    if (err) {
+      console.error(err);
+      res.status(500).send('Error updating data');
+    } else {
+      console.log(result.affectedRows + ' record(s) updated');
+      res.send('Data updated successfully');
+    }
+  });
+});
+
+app.get('/get-discount-produk', (req, res) => {
+  const query = `SELECT p.id_produk, p.nama, p.harga, SUM(pd.totaldiscount) AS totaldiskon FROM produk p JOIN produkdiskon pd ON p.id_produk = pd.id_produk GROUP BY p.id_produk, p.nama, p.harga
+  `;
+  db.query(query, (err, data) => {
+    if (err) {
+      console.error(err);
+      res.status(500).send('Error updating data');
+    } else {
+     return res.json(data);
+    }
+  });
+});
+
+app.get('/adddiscountcust/:id', (req, res) => {
+  const id = req.params.id;
+  const u = "INSERT INTO `customerwithdiscount` values (?)";
+  try {
+    db.query(u, [id], (err, data) => {
+      if (err) {
+        console.log(err);
+        return res.json({ error: err.sqlMessage });
+      } else {
+        console.log(data);
+      }
+    });
+  } catch (err) {
+    console.log(err);
+    return res.json({ error: err.message });
+  }
+});
+
+app.get('/get-discount-cust', (req, res) => {
+  const query = `SELECT c.id, c.nama
+  FROM customerwithdiscount cd
+  JOIN customer c ON c.id = cd.id
+  `;
+  db.query(query, (err, data) => {
+    if (err) {
+      console.error(err);
+      res.status(500).send('Error updating data');
+    } else {
+     return res.json(data);
+    }
+  });
+});
+app.get('/get-discount-cust/:id', (req, res) => {
+  const id = req.params.id;
+  const query = `SELECT c.id, c.nama
+  FROM customerwithdiscount cd
+  JOIN customer c ON c.id = cd.id WHERE cd.id=?
+  `;
+  db.query(query, [id], (err, data) => {
+    if (err) {
+      console.error(err);
+      res.status(500).send('Error updating data');
+    } else {
+     return res.json(data);
     }
   });
 });
@@ -816,10 +910,14 @@ app.post('/loginmember', (req, res) => {
       } else {
         const token = jwt.sign({ id: user.id }, 'secret', { expiresIn: '1h' });
 
-        // Set the token as a cookie
-        res.cookie('token', token);
-
-        res.sendStatus(200);
+        // Set the token as a client-side cookie
+        res.cookie('token', token, {
+          maxAge: 3600000, // Cookie expiration time in milliseconds
+          sameSite: 'strict', // Only allow cookies to be sent with same-site requests
+          path: '/', // Specify the path where the cookie is valid
+        });
+        res.send({ token });
+        console.log('Token extracted:', token);
         console.log('Welcome:', user.nama);
       }
     }
@@ -828,7 +926,10 @@ app.post('/loginmember', (req, res) => {
 
 // Protected route
 app.get('/statustoken', (req, res) => {
-  const token = req.cookies.token; // Extract the token from the cookie
+  const cookies = req.headers.cookie;
+  const parsedCookies = cookies ? cookie.parse(cookies) : {};
+  const token = parsedCookies.token;
+  console.log('token:', token);
 
   if (!token) {
     res.status(401).send('Unauthorized');
@@ -838,13 +939,14 @@ app.get('/statustoken', (req, res) => {
       // Verify the JWT to ensure that it is valid and has not expired
       const decodedToken = jwt.verify(token, 'secret');
       res.send({ id: decodedToken.id });
-      console.log('Decoded Token: ', decodedToken.id);
+      console.log('Decoded Token:', decodedToken.id);
     } catch (error) {
       res.status(401).send('Unauthorized');
       console.log('Error! AUTH:', error);
     }
   }
 });
+
 app.get('/usermember/:id', (req, res) => {
   const { id } = req.params;
   db.query('SELECT * FROM customer WHERE id = ?', [id], (error, results) => {
@@ -863,9 +965,8 @@ app.get('/usermember/:id', (req, res) => {
   });
 });
 app.post('/logout', (req, res) => {
-
-  res.clearCookie('token');
-  res.clearCookie('user');
+  res.clearCookie('token', { path: '/' });
+  res.clearCookie('user', { path: '/' });
 
   res.sendStatus(200);
 });
