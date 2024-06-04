@@ -2,12 +2,13 @@
 
 # Adjust NODE_VERSION as desired
 ARG NODE_VERSION=18.16.0
-FROM node:${NODE_VERSION}-slim as base
+FROM node:alpine
 
 LABEL fly_launch_runtime="NodeJS"
 
 # NodeJS app lives here
-WORKDIR /
+WORKDIR /usr/app
+COPY ./ /usr/app
 
 # Set production environment
 ENV NODE_ENV=production
