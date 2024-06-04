@@ -15,3 +15,4 @@ RUN npm install -g node-gyp
 RUN npm install @mapbox/node-pre-gyp
 RUN npm install underscore
 CMD node index.js
+EXPOSE 8080
