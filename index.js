@@ -1,9 +1,9 @@
 const mysql = require("mysql2");
-const axios = require("axios");
+
 const multer = require("multer");
-const path = require('path');
+
 const upload = multer({ dest: 'uploads/' });
-const kmeans = require('node-kmeans', 'ml-kmeans');
+const kmeans = require('node-kmeans');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const cookieParser = require('cookie-parser');
@@ -53,7 +53,7 @@ function euclideanDistance(point1, point2) {
 }
 app.get('/clusters_new', (req, res) => {
   const truncatetable = 'TRUNCATE TABLE customer_clusters';
-  db.query(truncatetable, (error, result) => {
+  db.query(truncatetable, (error) => {
     if (error) {
       console.error(error);
       res.status(500).send('Internal Server Error');
@@ -68,7 +68,6 @@ app.get('/clusters_new', (req, res) => {
       res.status(500).send('Internal Server Error');
     } else {
       const data = results.map(row => [row.JAN, row.FEB, row.MAR, row.APR, row.MEI, row.JUN, row.JUL, row.AGUST, row.SEPT, row.OKT, row.NOV, row.DES]);
-      const numData = data.length;
       const k = 2
       const maxIterations = 2;
       kmeans.clusterize(data, { k, maxIterations }, (err, clusters) => {
@@ -90,7 +89,7 @@ app.get('/clusters_new', (req, res) => {
             const clusterDistance = distances[index][assignedClusterIndex - 1];
             const sumCentroids = centroids.map(centroid => centroid.reduce((acc, value) => acc + value, 0));
             console.log('centroidsum', sumCentroids[assignedClusterIndex - 1])
-            const percentage = distances.map((distances, i) => {
+            const percentage = distances.map((distances) => {
               const distanceToAssignedCentroid = distances[assignedClusterIndex - 1];
               const diff = clusterDistance - distanceToAssignedCentroid;
               if (diff === 0) {
@@ -269,26 +268,7 @@ app.post('/produk_insert_picture', upload.single('picture'), async (req, res) =>
         return res.json({ error: err.sqlMessage });
       } else {
         return res.json({ result });
-        const insertmining = `INSERT INTO proses_mining(id_produk) VALUES (?)`
-        const values = [id_produk];
-        db.query(insertmining, values, (err, result) => {
-          if (err) {
-            console.error(err);
-            return res.json({ error: err.sqlMessage })
-          } else {
-            return res.json({ result })
-            const insertpenjualan = `INSERT INTO penjualan(id_produk) VALUES (?)`
-            const values = [id_produk];
-            db.query(insertpenjualan, values, (err, result) => {
-              if (err) {
-                console.error(err);
-                return res.json({ error: err.sqlMessage });
-              } else {
-                return res.json({ result })
-              }
-            })
-          }
-        })
+       
       }
     });
   } catch (err) {
@@ -297,8 +277,8 @@ app.post('/produk_insert_picture', upload.single('picture'), async (req, res) =>
   }
 });
 app.get('/cartlist/:id', async (req, res) => {
-  idcust = req.params.id;
-  idproduct = req.params.id;
+
+
   const query = `
   SELECT customercartlist.idcust, produk.*
 FROM customercartlist
@@ -306,7 +286,7 @@ JOIN customer ON customercartlist.idcust = customer.id
 JOIN produk ON customercartlist.idproduct = produk.id_produk
 WHERE customercartlist.idcust = ?;
     `;
-  db.query(query, [idcust], (error, results) => {
+  db.query(query, (error, results) => {
 
     if (error) {
       console.error(error);
@@ -420,7 +400,6 @@ app.get("/produkpicture", (req, res) => {
 });
 
 app.get("/produkpicturecat/id", (req, res) => {
-  const id_kategori = req.params.id;
   const r = "SELECT * FROM `produk` WHERE id_kategori = ? ORDER BY id_produk";
   db.query(r, (err, data) => {
     console.log(err, data);
@@ -432,9 +411,9 @@ app.get("/produkpicturecat/id", (req, res) => {
 });
 
 app.patch("/produk_patch", (req, res) => {
-  const insert = `UPDATE produk SET id_produk = "${id_produk}" nama = "${nama}" id_kategori = "${id_kategori}" stok = "${stok}" harga = "${harga}"`;
-  console.log("insert", values);
-  db.query(insert, [values], (err, data) => {
+  const insert = `UPDATE produk SET id_produk = ? nama = ? id_kategori = ? stok = ? harga = ?`;
+  console.log("insert");
+  db.query(insert, (err, data) => {
     console.log(err, data);
     if (err) return res.json({ error: err.sqlMessage });
     else return res.json({ data });
@@ -784,7 +763,7 @@ app.post('/updatequantity', (req, res) => {
 
           const querycustomer = `UPDATE customerhistory SET ${currentMonth} = ${currentMonth} + ${quantity}, total = total + ${quantity} WHERE id = ${idcustomer}`;
 
-          db.query(querycustomer, (err, result) => {
+          db.query(querycustomer, (err) => {
             if (err) {
               console.error(err);
               console.log('error!', err);
@@ -799,7 +778,6 @@ app.post('/updatequantity', (req, res) => {
 });
 
 app.get("/cartcustomer", (req, res) => {
-  const idcust = req.params.id;
   const u = "SELECT * FROM `cartcustomer`";
   db.query(u, (err, data) => {
     console.log(err, data);
@@ -875,14 +853,14 @@ app.get("/categorylist", (req, res) => {
 app.post('/registerusers', async (req, res) => {
   const { email, nama, password } = req.body;
   const hashedPassword = bcrypt.hashSync(password, 10);
-  db.query('INSERT INTO customer (email, nama, password) VALUES (?, ?, ?)', [email, nama, hashedPassword], (error, results) => {
+  db.query('INSERT INTO customer (email, nama, password) VALUES (?, ?, ?)', [email, nama, hashedPassword], (error) => {
     if (error) {
       console.error(error);
       res.status(500).send('Error registering user');
     } else {
       console.log('User registered successfully : ', nama)
       res.sendStatus(200);
-      db.query('INSERT INTO customerhistory (id, nama) VALUES (?, ?)', ['', nama], (error, results) => {
+      db.query('INSERT INTO customerhistory (id, nama) VALUES (?, ?)', ['', nama], (error) => {
         if (error) {
           console.error(error);
           res.status(500).send('Error registering user');
@@ -1159,7 +1137,7 @@ app.get('/kmeans_process', (req, res) => {
 
   // ...
 
-  function storeResults(data, clusterAssignments, centroids, distances, iteration) {
+  function storeResults(data, clusterAssignments, distances) {
     // Fetch id_produk values from the produk table
     const idProdukQuery = `SELECT id_produk FROM produk`;
     db.query(idProdukQuery, (err, idProdukResults) => {
@@ -1185,12 +1163,12 @@ app.get('/kmeans_process', (req, res) => {
 
         }
 
-        const centroid = centroids[cluster];
+
         const distance = distances[i];
         console.log('distance', distance);
         console.log('data', data[i]);
         console.log('cluster', cluster);
-        const idProduk = idProdukArray[i];
+
       }
     });
   }
@@ -1293,7 +1271,7 @@ app.get('/kmeans_test', (req, res) => {
       centroidHistory.push(centroidCoordinates);
 
       // Calculate and store the distances for this iteration
-      const iterationDistances = clusters.map((cluster, clusterIndex) => {
+      const iterationDistances = clusters.map((cluster) => {
         return cluster.map(({ data, distance }) => ({
           nama: data.nama,
           cluster: `${data.total}; ${data.stok}`,
@@ -1343,15 +1321,10 @@ app.get('/kmeans_test', (req, res) => {
         iteration INT
       )
     `;
-
-
-    // Truncate the table before inserting new data
     const truncateTableQuery = `TRUNCATE TABLE ${newTableName}`;
-
-    // Insert the distances data into the new table
     let insertQuery = `INSERT INTO ${newTableName} (nama, cluster, distance, label, iteration) VALUES `;
     const values = [];
-    distances.forEach((iterationDistances, iteration) => { // Iterate over distances and capture the iteration index
+    distances.forEach((iterationDistances) => { // Iterate over distances and capture the iteration index
       iterationDistances.forEach(clusterDistances => {
         clusterDistances.forEach(({ nama, cluster, distance, label, iteration: iter }) => { // Access the iteration value from the result
           values.push(`('${nama}', '${cluster}', ${distance}, '${label}', ${iter})`);
