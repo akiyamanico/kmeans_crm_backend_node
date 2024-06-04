@@ -13,9 +13,4 @@ COPY ./ /usr/app
 COPY --link package.json package-lock.json 
 RUN npm install -g node-gyp
 RUN npm install @mapbox/node-pre-gyp
-RUN npm install
-RUN npm run start
-
-
-# Start the server by default, this can be overwritten at runtime
-CMD [ "npm", "run", "start" ]
+CMD node index.js
