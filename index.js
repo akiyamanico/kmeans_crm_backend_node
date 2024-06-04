@@ -23,9 +23,13 @@ const db = mysql.createConnection({
 const idmining = mysql.createConnection({
   host: "mysql-3a3beccc-hayatistore.f.aivencloud.com",
   user: "avnadmin",
+  port: "15554",
   password: "AVNS_BWZ389d1XfCW7Ny0obc",
   database: "defaultdb",
-  ssl: {}
+  ssl: {
+    ca: [
+      fs.readFileSync('ca.pem')
+    ]}
 });
 
 const express = require("express"); //import express
