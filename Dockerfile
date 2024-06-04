@@ -6,6 +6,8 @@ FROM node:${NODE_VERSION}-slim as base
 
 LABEL fly_launch_runtime="NodeJS"
 
+# NodeJS app lives here
+WORKDIR /
 
 # Set production environment
 ENV NODE_ENV=production
@@ -20,7 +22,7 @@ RUN apt-get update -qq && \
 
 # Install node modules
 COPY --link package.json package-lock.json 
-RUN npm run start
+RUN npm install
 
 # Copy application code
 COPY --link . .
