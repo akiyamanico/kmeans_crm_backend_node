@@ -2,7 +2,7 @@
 
 # Adjust NODE_VERSION as desired
 ARG NODE_VERSION=18.16.0
-FROM node:alpine
+FROM node:22-alpine3.19
 RUN apk update && apk add --no-cache python3 py3-pip  make g++
 # NodeJS app lives here
 WORKDIR /usr/app
