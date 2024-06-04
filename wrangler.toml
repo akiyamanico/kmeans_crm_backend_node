@@ -1,0 +1,5 @@
+name = "my-worker"
+type = "javascript"
+account_id = "36457fae677f4284a488a797d833f3e6"
+workers_dev = true
+compatibility_date = "2025-01-01"
