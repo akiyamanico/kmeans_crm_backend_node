@@ -12,17 +12,17 @@ require('dotenv').config()
 console.log(process.env)
 console.log(process.env.DB_PASSWORD)
 const db = mysql.createConnection({
-  host: "localhost",
-  user: process.env.DB_USERNAME,
-  password: process.env.DB_PASSWORD,
-  database: "skripsihayatistore",
+  host: "mysql-3a3beccc-hayatistore.f.aivencloud.com",
+  user: "avnadmin",
+  password: "AVNS_BWZ389d1XfCW7Ny0obc",
+  database: "defaultdb",
   ssl: {}
 });
 const idmining = mysql.createConnection({
-  host: "aws.connect.psdb.cloud",
-  user: "03ncavdktsvy5juozpqi",
-  password: "pscale_pw_pX43mt3xiHazkdDyi6ezOvc42nXaOqgk1BWEC4Wg4hE",
-  database: "skripsihayatistore",
+  host: "mysql-3a3beccc-hayatistore.f.aivencloud.com",
+  user: "avnadmin",
+  password: "AVNS_BWZ389d1XfCW7Ny0obc",
+  database: "defaultdb",
   ssl: {}
 });
 
