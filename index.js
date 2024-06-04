@@ -1,4 +1,4 @@
-const mysql = require("mysql");
+const mysql = require("mysql2");
 const axios = require("axios");
 const multer = require("multer");
 const path = require('path');
@@ -8,15 +8,20 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const cookieParser = require('cookie-parser');
 const cookie = require('cookie');
+const fs = require('fs')
 require('dotenv').config()
 console.log(process.env)
 console.log(process.env.DB_PASSWORD)
 const db = mysql.createConnection({
   host: "mysql-3a3beccc-hayatistore.f.aivencloud.com",
   user: "avnadmin",
+  port: "15554",
   password: "AVNS_BWZ389d1XfCW7Ny0obc",
   database: "defaultdb",
-  ssl: {}
+  ssl: {
+    ca: [
+      fs.readFileSync('ca.pem')
+    ]}
 });
 const idmining = mysql.createConnection({
   host: "mysql-3a3beccc-hayatistore.f.aivencloud.com",
