@@ -9,9 +9,6 @@ const jwt = require('jsonwebtoken');
 const cookieParser = require('cookie-parser');
 const cookie = require('cookie');
 const fs = require('fs')
-require('dotenv').config()
-console.log(process.env)
-console.log(process.env.DB_PASSWORD)
 const db = mysql.createConnection({
   host: "mysql-3a3beccc-hayatistore.f.aivencloud.com",
   user: "avnadmin",
