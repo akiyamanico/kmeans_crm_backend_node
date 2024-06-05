@@ -13,7 +13,6 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@img/sharp-libvips-dev": "^1.0.2",
     "aws-sdk": "^2.1633.0",
     "aws-sdk-mock": "^6.0.1",
     "axios": "^1.7.2",
